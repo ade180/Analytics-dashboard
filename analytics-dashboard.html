@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics Pro — Business Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* ===== DARK THEME (default) ===== */
+:root{
+  --bg:#0d1421;--bg-card:rgba(255,255,255,0.045);--bg-subtle:rgba(255,255,255,0.03);
+  --bg-nav:#09101d;--border:rgba(255,255,255,0.07);--border-strong:rgba(255,255,255,0.12);
+  --text:#ffffff;--text-muted:rgba(255,255,255,0.48);--text-faint:rgba(255,255,255,0.26);
+  --grid:rgba(255,255,255,0.05);--tick:rgba(255,255,255,0.32);
+  --accent:#c8ddf0;--navy:#0a1e38;
+  --up:#4ade80;--up-bg:rgba(74,222,128,0.12);
+  --dn:#f87171;--dn-bg:rgba(248,113,113,0.12);
+  --radius:10px;--radius-sm:6px;
+}
+/* ===== LIGHT THEME ===== */
+body.light{
+  --bg:#f5f0e8;--bg-card:#ffffff;--bg-subtle:rgba(10,30,56,0.03);
+  --bg-nav:#0a1e38;--border:rgba(10,30,56,0.08);--border-strong:rgba(10,30,56,0.15);
+  --text:#0a1e38;--text-muted:rgba(10,30,56,0.5);--text-faint:rgba(10,30,56,0.28);
+  --grid:rgba(10,30,56,0.05);--tick:rgba(10,30,56,0.38);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',-apple-system,sans-serif;font-size:14px;
+  background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;transition:background .2s,color .2s;}
+button,input,select{font-family:inherit;}
+
+/* ===== LAYOUT ===== */
+.app{display:flex;flex-direction:column;min-height:100vh;}
+
+/* ===== TOP NAV ===== */
+.topbar{background:var(--bg-nav);padding:0 24px;height:58px;display:flex;align-items:center;
+  justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.06);
+  flex-shrink:0;gap:12px;position:sticky;top:0;z-index:50;}
+.tb-left{display:flex;align-items:center;gap:20px;}
+.logo{font-size:15px;font-weight:900;color:#fff;letter-spacing:-0.02em;flex-shrink:0;}
+.logo span{color:var(--accent);}
+.nav-tabs{display:flex;gap:1px;}
+.nav-tab{padding:5px 12px;border-radius:5px;border:none;background:transparent;
+  color:rgba(255,255,255,0.4);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;}
+.nav-tab:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);}
+.nav-tab.active{background:rgba(255,255,255,0.1);color:#fff;}
+.tb-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.upload-zone{display:flex;align-items:center;gap:6px;padding:6px 11px;
+  background:rgba(255,255,255,0.05);border:1px dashed rgba(200,221,240,0.25);
+  border-radius:var(--radius-sm);cursor:pointer;color:rgba(255,255,255,0.45);font-size:12px;transition:all .15s;}
+.upload-zone:hover{background:rgba(200,221,240,0.08);border-color:var(--accent);color:var(--accent);}
+.upload-zone svg{flex-shrink:0;}
+.btn{padding:6px 13px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;
+  border:none;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-ghost{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);border:0.5px solid var(--border-strong);}
+.btn-ghost:hover{background:rgba(255,255,255,0.12);color:#fff;}
+.btn-primary{background:var(--accent);color:var(--navy);}
+.btn-primary:hover{background:#afd0ec;}
+.topbar-select{background:rgba(255,255,255,0.07);border:0.5px solid var(--border-strong);
+  border-radius:var(--radius-sm);padding:6px 10px;font-family:inherit;
+  font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;outline:none;}
+
+/* ===== MAIN ===== */
+.main{flex:1;padding:24px;max-width:1400px;margin:0 auto;width:100%;}
+.section-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;}
+.section-title{font-size:22px;font-weight:900;color:var(--text);letter-spacing:-0.025em;}
+.section-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+
+/* ===== KPI CARDS ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+.kpi-card{background:var(--bg-card);border:0.5px solid var(--border);border-radius:var(--radius);
+  padding:16px 18px;border-top:3px solid rgba(200,221,240,0.45);transition:border-color .2s;}
+.kpi-card:hover{border-top-color:var(--accent);}
+.kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-muted);margin-bottom:8px;}
+.kpi-val{font-size:28px;font-weight:900;color:var(--text);letter-spacing:-.04em;line-height:1;}
+.kpi-change{font-size:11.5px;font-weight:600;margin-top:5px;}
+.kpi-change.up{color:var(--up);}
+.kpi-change.dn{color:var(--dn);}
+
+/* ===== CHART CARDS ===== */
+.charts-row-1{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;}
+.charts-row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.chart-card{background:var(--bg-card);border:0.5px solid var(--border);border-radius:var(--radius);padding:20px;transition:background .2s;}
+.chart-header{margin-bottom:18px;}
+.chart-title{font-size:14px;font-weight:700;color:var(--text);}
+.chart-sub{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+.canvas-wrap{position:relative;}
+.canvas-wrap.tall{height:240px;}
+.canvas-wrap.medium{height:185px;}
+.canvas-wrap.short{height:145px;}
+
+/* ===== DOUGHNUT LEGEND ===== */
+.donut-legend{display:flex;flex-direction:column;gap:7px;margin-top:14px;}
+.legend-row{display:flex;align-items:center;justify-content:space-between;}
+.legend-left{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-muted);}
+.legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.legend-pct{font-size:12.5px;font-weight:600;color:var(--text);}
+
+/* ===== KPI METRICS TABLE ===== */
+.metrics-table{display:flex;flex-direction:column;gap:0;}
+.metric-row{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 0;border-bottom:.5px solid var(--border);}
+.metric-row:last-child{border-bottom:none;}
+.metric-name{font-size:13px;color:var(--text-muted);}
+.metric-right{display:flex;align-items:center;gap:8px;}
+.metric-val{font-size:13px;font-weight:700;color:var(--text);}
+.metric-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;}
+.metric-badge.up{background:var(--up-bg);color:var(--up);}
+.metric-badge.dn{background:var(--dn-bg);color:var(--dn);}
+
+/* ===== DATA TABLE ===== */
+.table-card{background:var(--bg-card);border:0.5px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;margin-bottom:24px;transition:background .2s;}
+.table-card-hdr{padding:14px 20px;border-bottom:0.5px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.table-card-title{font-size:14px;font-weight:700;color:var(--text);}
+.table-search{padding:7px 12px;background:var(--bg-subtle);border:0.5px solid var(--border);
+  border-radius:var(--radius-sm);font-size:13px;color:var(--text);outline:none;min-width:200px;transition:all .15s;}
+.table-search::placeholder{color:var(--text-faint);}
+.table-search:focus{border-color:var(--accent);background:var(--bg-card);}
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{text-align:left;font-size:11px;font-weight:600;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:.07em;padding:11px 20px;
+  border-bottom:.5px solid var(--border);background:var(--bg-subtle);cursor:pointer;}
+.data-table th:hover{color:var(--text);}
+.data-table td{padding:12px 20px;font-size:13px;border-bottom:.5px solid var(--border);color:var(--text-muted);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--bg-subtle);}
+.td-strong{font-weight:700;color:var(--text)!important;}
+.td-profit.pos{color:var(--up)!important;font-weight:600;}
+.td-profit.neg{color:var(--dn)!important;font-weight:600;}
+
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:var(--accent);
+  padding:11px 18px;border-radius:8px;font-size:13px;font-weight:500;
+  opacity:0;transform:translateY(10px);transition:all .25s;z-index:999;
+  box-shadow:0 8px 24px rgba(0,0,0,0.3);}
+.toast.show{opacity:1;transform:translateY(0);}
+
+/* ===== UPLOAD MODAL ===== */
+.csv-hint{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;z-index:100;}
+.csv-box{background:#0d1421;border:0.5px solid var(--border-strong);border-radius:var(--radius);
+  padding:24px;max-width:460px;width:90%;}
+.csv-box h2{font-size:16px;font-weight:800;color:#fff;margin-bottom:8px;}
+.csv-box p{font-size:13px;color:rgba(255,255,255,0.5);line-height:1.6;margin-bottom:16px;}
+.csv-box pre{background:rgba(255,255,255,0.05);border-radius:6px;padding:12px;
+  font-size:11.5px;color:var(--accent);line-height:1.6;margin-bottom:16px;overflow:auto;}
+.csv-box-actions{display:flex;gap:8px;}
+
+/* ===== PRINT ===== */
+@media print{
+  .topbar,.toast,.csv-hint{display:none!important;}
+  .app,.main{background:white!important;}
+  .chart-card,.kpi-card,.table-card{background:white!important;border-color:#ddd!important;break-inside:avoid;}
+  .kpi-val,.chart-title,.table-card-title,.section-title{color:#0a1e38!important;}
+  .kpi-label,.chart-sub,.metric-name,.data-table td{color:#666!important;}
+  .data-table th{background:#f5f5f5!important;color:#666!important;}
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1000px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-row-1{grid-template-columns:1fr;}
+  .charts-row-2{grid-template-columns:1fr;}
+}
+@media(max-width:700px){
+  .nav-tabs{display:none;}
+  .tb-right .btn-ghost{display:none;}
+  .main{padding:16px;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- TOP NAV -->
+  <header class="topbar">
+    <div class="tb-left">
+      <div class="logo">Analytics<span>Pro</span></div>
+      <nav class="nav-tabs" aria-label="Dashboard sections">
+        <button class="nav-tab active" data-view="overview" onclick="switchView('overview')">Overview</button>
+        <button class="nav-tab" data-view="revenue" onclick="switchView('revenue')">Revenue</button>
+        <button class="nav-tab" data-view="expenses" onclick="switchView('expenses')">Expenses</button>
+        <button class="nav-tab" data-view="customers" onclick="switchView('customers')">Customers</button>
+      </nav>
+    </div>
+    <div class="tb-right">
+      <div class="upload-zone" onclick="showUploadModal()" role="button" tabindex="0" aria-label="Upload CSV data">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+          <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+        </svg>
+        Upload CSV
+      </div>
+      <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleCSV(event)" aria-label="Select CSV file">
+      <button class="btn btn-ghost" onclick="downloadTemplate()">↓ Template</button>
+      <select id="period-sel" class="topbar-select" onchange="filterPeriod(this.value)" aria-label="Select time period">
+        <option value="6">Last 6 months</option>
+        <option value="3">Last 3 months</option>
+        <option value="all">All data</option>
+      </select>
+      <button id="theme-btn" class="btn btn-ghost" onclick="toggleTheme()">☀ Light</button>
+      <button class="btn btn-primary" onclick="exportPDF()">↓ Export PDF</button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="section-header" style="margin-bottom:20px;">
+      <div>
+        <div class="section-title" id="dash-title">Quarterly Performance</div>
+        <div class="section-sub" id="dash-sub">H1 2026 · January – June · All figures in GBP</div>
+      </div>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid" id="kpi-grid" role="list" aria-label="Key performance indicators">
+      <!-- rendered by JS -->
+    </div>
+
+    <!-- CHARTS ROW 1: Revenue + Expenses doughnut -->
+    <div class="charts-row-1" id="section-revenue">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Revenue Trend</div>
+          <div class="chart-sub" id="rev-sub">Monthly revenue · Jan – Jun 2026</div>
+        </div>
+        <div class="canvas-wrap tall">
+          <canvas id="revenue-chart" aria-label="Monthly revenue line chart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" id="section-expenses">
+        <div class="chart-header">
+          <div class="chart-title">Expense Breakdown</div>
+          <div class="chart-sub">By category · All periods</div>
+        </div>
+        <div class="canvas-wrap short">
+          <canvas id="expenses-chart" aria-label="Expense breakdown doughnut chart"></canvas>
+        </div>
+        <div class="donut-legend" id="donut-legend" role="list" aria-label="Expense category legend">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 2: Customers + KPI table -->
+    <div class="charts-row-2" id="section-customers">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Revenue vs Expenses</div>
+          <div class="chart-sub">Monthly comparison</div>
+        </div>
+        <div class="canvas-wrap medium">
+          <canvas id="combined-chart" aria-label="Revenue vs expenses comparison chart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">KPI Metrics</div>
+          <div class="chart-sub" id="kpi-period-sub">H1 2026 performance</div>
+        </div>
+        <div class="metrics-table" id="kpi-metrics" role="table" aria-label="KPI metrics">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMER GROWTH CHART -->
+    <div class="chart-card" style="margin-bottom:14px;">
+      <div class="chart-header">
+        <div class="chart-title">New Customers by Month</div>
+        <div class="chart-sub">Monthly customer acquisition</div>
+      </div>
+      <div class="canvas-wrap medium">
+        <canvas id="customers-chart" aria-label="Monthly customer acquisition bar chart"></canvas>
+      </div>
+    </div>
+
+    <!-- DATA TABLE -->
+    <div class="table-card">
+      <div class="table-card-hdr">
+        <div class="table-card-title">Monthly Data</div>
+        <input class="table-search" id="table-search" placeholder="Search data..." oninput="filterTable(this.value)" aria-label="Search monthly data">
+      </div>
+      <div id="table-wrap">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="csv-hint" id="csv-modal" style="display:none;" role="dialog" aria-modal="true" aria-label="CSV upload instructions">
+  <div class="csv-box">
+    <h2>Upload Your CSV Data</h2>
+    <p>Your CSV must have these columns. Download the template to get started, or copy the format below:</p>
+    <pre>Month,Revenue,Expenses,Customers,Notes
+Jan 2026,18500,6200,42,Strong start
+Feb 2026,21000,7100,56,Campaign boost
+Mar 2026,19800,6800,48,Mid-quarter</pre>
+    <div class="csv-box-actions">
+      <button class="btn btn-primary" onclick="triggerFileInput()">Select CSV File</button>
+      <button class="btn btn-ghost" onclick="downloadTemplate()">Download Template</button>
+      <button class="btn btn-ghost" onclick="closeUploadModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =====================================================
+   ANALYTICS PRO — app.js
+   Features: 4 Chart.js charts, CSV upload, dark/light mode,
+   date range filter, search, PDF export, KPI cards
+   ===================================================== */
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+/* ---------- DEMO DATA ---------- */
+const FULL_DATA = [
+  { month:'Jan 2026', revenue:18500, expenses:6200, customers:42, notes:'Strong start to year' },
+  { month:'Feb 2026', revenue:21000, expenses:7100, customers:56, notes:'Marketing campaign launch' },
+  { month:'Mar 2026', revenue:19800, expenses:6800, customers:48, notes:'Mid-quarter adjustment' },
+  { month:'Apr 2026', revenue:24500, expenses:8200, customers:67, notes:'Recovery and growth' },
+  { month:'May 2026', revenue:28000, expenses:9100, customers:74, notes:'Best month YTD' },
+  { month:'Jun 2026', revenue:32700, expenses:10600, customers:89, notes:'Record revenue' },
+];
+const EXP_CATS = {
+  Salaries:42, Marketing:22, Software:18, Travel:10, Other:8
+};
+const CHART_COLORS = ['#0a1e38','#c8ddf0','#4a7b9d','#1e3a5f','#7aa5c5'];
+let currentData = [...FULL_DATA];
+let charts = {};
+
+/* ---------- UTILITIES ---------- */
+const fmtCurrency = n => '£'+parseFloat(n||0).toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtK = n => n>=1000?'£'+(n/1000).toFixed(1)+'K':fmtCurrency(n);
+const isDark = () => !document.body.classList.contains('light');
+
+function getColors(){
+  const dark = isDark();
+  return {
+    grid: dark?'rgba(255,255,255,0.05)':'rgba(10,30,56,0.06)',
+    tick: dark?'rgba(255,255,255,0.32)':'rgba(10,30,56,0.4)',
+    tooltip:{bg:'#0a1e38',body:'#fff'},
+    accent:'#c8ddf0',
+    navy:'#0a1e38',
+    mid:'#4a7b9d',
+  };
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+/* ---------- KPI CARDS ---------- */
+function renderKPIs(data){
+  const rev = data.reduce((s,d)=>s+d.revenue,0);
+  const exp = data.reduce((s,d)=>s+d.expenses,0);
+  const pft = rev-exp;
+  const margin = rev>0?((pft/rev)*100).toFixed(1):0;
+  const custs = data.reduce((s,d)=>s+d.customers,0);
+  const firstRev = data[0]?.revenue||0;
+  const lastRev = data[data.length-1]?.revenue||0;
+  const growth = firstRev>0?(((lastRev-firstRev)/firstRev)*100).toFixed(1):0;
+
+  const cards = [
+    { label:'Total Revenue', val:fmtK(rev), change:`↑ ${growth}% period growth`, dir:'up' },
+    { label:'Total Expenses', val:fmtK(exp), change:`${((exp/rev)*100).toFixed(1)}% of revenue`, dir:'dn' },
+    { label:'Net Profit', val:fmtK(pft), change:`${margin}% profit margin`, dir:'up' },
+    { label:'New Customers', val:custs, change:`${data.length} months of data`, dir:'up' },
+  ];
+
+  document.getElementById('kpi-grid').innerHTML = cards.map(c=>`
+    <div class="kpi-card" role="listitem">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-val">${c.val}</div>
+      <div class="kpi-change ${c.dir}">${c.change}</div>
+    </div>`).join('');
+}
+
+/* ---------- KPI METRICS TABLE ---------- */
+function renderMetrics(data){
+  const rev = data.reduce((s,d)=>s+d.revenue,0);
+  const exp = data.reduce((s,d)=>s+d.expenses,0);
+  const pft = rev-exp;
+  const custs = data.reduce((s,d)=>s+d.customers,0);
+  const avgOrder = custs>0?Math.round(rev/custs):0;
+
+  const metrics = [
+    { name:'Profit Margin', val:`${rev>0?((pft/rev)*100).toFixed(1):0}%`, badge:'up', change:'↑ vs target' },
+    { name:'Avg Order Value', val:fmtCurrency(avgOrder), badge:'up', change:'↑ improving' },
+    { name:'Total Customers', val:custs.toLocaleString(), badge:'up', change:'↑ growing' },
+    { name:'Cost per Customer', val:custs>0?fmtCurrency(Math.round(exp/custs)):'—', badge:'dn', change:'↓ optimising' },
+    { name:'Revenue per Month', val:fmtCurrency(Math.round(rev/data.length)), badge:'up', change:'↑ trending' },
+  ];
+
+  document.getElementById('kpi-metrics').innerHTML = metrics.map(m=>`
+    <div class="metric-row" role="row">
+      <div class="metric-name">${m.name}</div>
+      <div class="metric-right">
+        <div class="metric-val">${m.val}</div>
+        <span class="metric-badge ${m.badge}">${m.change}</span>
+      </div>
+    </div>`).join('');
+}
+
+/* ---------- DATA TABLE ---------- */
+function renderTable(data){
+  const rows = data.map(d=>{
+    const profit = d.revenue-d.expenses;
+    const margin = d.revenue>0?((profit/d.revenue)*100).toFixed(1):0;
+    return`<tr>
+      <td class="td-strong">${d.month}</td>
+      <td class="td-strong">${fmtCurrency(d.revenue)}</td>
+      <td>${fmtCurrency(d.expenses)}</td>
+      <td class="td-profit ${profit>=0?'pos':'neg'}">${fmtCurrency(profit)}</td>
+      <td>${margin}%</td>
+      <td>${d.customers}</td>
+      <td style="color:var(--text-faint);font-size:12px;">${d.notes||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('table-wrap').innerHTML = `
+    <table class="data-table" aria-label="Monthly financial data">
+      <thead>
+        <tr>
+          <th>Month</th><th>Revenue</th><th>Expenses</th>
+          <th>Profit</th><th>Margin</th><th>Customers</th><th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-faint);">No data found.</td></tr>'}</tbody>
+    </table>`;
+}
+
+function filterTable(q){
+  q=q.toLowerCase();
+  const filtered=currentData.filter(d=>
+    Object.values(d).some(v=>String(v).toLowerCase().includes(q)));
+  renderTable(filtered);
+}
+
+/* ---------- CHART.JS CHARTS ---------- */
+function destroyCharts(){
+  Object.values(charts).forEach(c=>{if(c){try{c.destroy();}catch(e){}}});
+  charts={};
+}
+
+function initCharts(data){
+  destroyCharts();
+  const C = getColors();
+  const labels = data.map(d=>d.month.split(' ')[0]); // "Jan", "Feb"...
+  const revData = data.map(d=>d.revenue);
+  const expData = data.map(d=>d.expenses);
+  const custData = data.map(d=>d.customers);
+
+  const scaleOpts = {
+    x:{ grid:{color:C.grid,drawBorder:false}, border:{display:false}, ticks:{color:C.tick,font:{size:12}} },
+    y:{ grid:{color:C.grid,drawBorder:false}, border:{display:false}, ticks:{color:C.tick,font:{size:12}} }
+  };
+  const tooltipOpts = {
+    backgroundColor:C.tooltip.bg, bodyColor:C.tooltip.body,
+    titleColor:C.tick, padding:10, cornerRadius:8
+  };
+
+  /* 1. Revenue line chart */
+  const rCtx = document.getElementById('revenue-chart');
+  if(rCtx) charts.revenue = new Chart(rCtx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'Revenue',
+        data:revData,
+        borderColor:C.accent,
+        backgroundColor:isDark()?'rgba(200,221,240,0.08)':'rgba(200,221,240,0.2)',
+        fill:true, tension:0.4, borderWidth:2.5,
+        pointBackgroundColor:C.accent, pointBorderColor:isDark()?'#0d1421':'#f5f0e8',
+        pointBorderWidth:2, pointRadius:5, pointHoverRadius:7
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{...tooltipOpts,callbacks:{label:c=>'  Revenue: £'+c.raw.toLocaleString()}}
+      },
+      scales:{
+        x:{...scaleOpts.x},
+        y:{...scaleOpts.y,ticks:{...scaleOpts.y.ticks,callback:v=>'£'+v.toLocaleString()}}
+      }
+    }
+  });
+
+  /* 2. Expenses doughnut */
+  const eCtx = document.getElementById('expenses-chart');
+  if(eCtx) charts.expenses = new Chart(eCtx,{
+    type:'doughnut',
+    data:{
+      labels:Object.keys(EXP_CATS),
+      datasets:[{
+        data:Object.values(EXP_CATS),
+        backgroundColor:CHART_COLORS,
+        borderWidth:0, hoverOffset:6
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{...tooltipOpts,callbacks:{label:c=>`  ${c.label}: ${c.raw}%`}}
+      }
+    }
+  });
+
+  /* Render doughnut legend */
+  document.getElementById('donut-legend').innerHTML = Object.entries(EXP_CATS).map(([k,v],i)=>`
+    <div class="legend-row" role="listitem">
+      <div class="legend-left">
+        <div class="legend-dot" style="background:${CHART_COLORS[i]}" aria-hidden="true"></div>
+        ${k}
+      </div>
+      <div class="legend-pct">${v}%</div>
+    </div>`).join('');
+
+  /* 3. Revenue vs Expenses combined bar */
+  const cCtx = document.getElementById('combined-chart');
+  if(cCtx) charts.combined = new Chart(cCtx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        { label:'Revenue', data:revData, backgroundColor:isDark()?'rgba(200,221,240,0.6)':C.accent, borderRadius:4, barThickness:16 },
+        { label:'Expenses', data:expData, backgroundColor:isDark()?'rgba(74,123,157,0.5)':'rgba(10,30,56,0.3)', borderRadius:4, barThickness:16 }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'top',align:'end',labels:{color:C.tick,font:{size:12},boxWidth:12,padding:16}},
+        tooltip:{...tooltipOpts,callbacks:{label:c=>`  ${c.dataset.label}: £${c.raw.toLocaleString()}`}}
+      },
+      scales:{
+        x:{...scaleOpts.x},
+        y:{...scaleOpts.y,ticks:{...scaleOpts.y.ticks,callback:v=>'£'+v.toLocaleString()}}
+      }
+    }
+  });
+
+  /* 4. Customer growth bar */
+  const cuCtx = document.getElementById('customers-chart');
+  if(cuCtx) charts.customers = new Chart(cuCtx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'New Customers',
+        data:custData,
+        backgroundColor:isDark()?'rgba(200,221,240,0.5)':C.accent,
+        hoverBackgroundColor:C.accent,
+        borderRadius:5, barThickness:28
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{...tooltipOpts,callbacks:{label:c=>`  ${c.raw} new customers`}}
+      },
+      scales:{
+        x:{...scaleOpts.x},
+        y:{...scaleOpts.y,ticks:{...scaleOpts.y.ticks,stepSize:10}}
+      }
+    }
+  });
+}
+
+/* ---------- FULL RE-RENDER ---------- */
+function render(data){
+  currentData = data;
+  renderKPIs(data);
+  renderMetrics(data);
+  renderTable(data);
+  initCharts(data);
+}
+
+/* ---------- PERIOD FILTER ---------- */
+function filterPeriod(val){
+  const n = val==='all'?FULL_DATA.length:parseInt(val);
+  render(FULL_DATA.slice(-n));
+  toast(`Showing last ${val==='all'?'all':val} months`);
+}
+
+/* ---------- CSV UPLOAD ---------- */
+function showUploadModal(){ document.getElementById('csv-modal').style.display='flex'; }
+function closeUploadModal(){ document.getElementById('csv-modal').style.display='none'; }
+function triggerFileInput(){
+  closeUploadModal();
+  document.getElementById('csv-input').click();
+}
+
+function parseCSV(text){
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/\s+/g,''));
+  return lines.slice(1).filter(l=>l.trim()).map(line=>{
+    const vals = line.split(',');
+    const row = {};
+    headers.forEach((h,i)=>{ row[h]=vals[i]?.trim()||''; });
+    return {
+      month: row.month||row.date||row.period||'Unknown',
+      revenue: parseFloat(row.revenue||row.rev||0),
+      expenses: parseFloat(row.expenses||row.exp||row.costs||0),
+      customers: parseInt(row.customers||row.newcustomers||0),
+      notes: row.notes||row.note||row.description||''
+    };
+  }).filter(r=>r.revenue>0||r.expenses>0);
+}
+
+function handleCSV(event){
+  const file = event.target.files[0];
+  if(!file)return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const parsed = parseCSV(e.target.result);
+      if(!parsed.length){ toast('⚠ No valid data found in CSV'); return; }
+      FULL_DATA.length=0;
+      parsed.forEach(r=>FULL_DATA.push(r));
+      render([...FULL_DATA]);
+      document.getElementById('dash-title').textContent='Uploaded Data Dashboard';
+      document.getElementById('dash-sub').textContent=`${parsed.length} rows loaded from ${file.name}`;
+      toast(`✓ Loaded ${parsed.length} rows from ${file.name}`);
+    }catch(err){
+      toast('⚠ Could not parse CSV. Check the format.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value='';
+}
+
+/* ---------- TEMPLATE DOWNLOAD ---------- */
+function downloadTemplate(){
+  const csv=`Month,Revenue,Expenses,Customers,Notes
+Jan 2026,18500,6200,42,Strong start to year
+Feb 2026,21000,7100,56,Marketing campaign launch
+Mar 2026,19800,6800,48,Mid-quarter adjustment
+Apr 2026,24500,8200,67,Recovery and growth
+May 2026,28000,9100,74,Best month YTD
+Jun 2026,32700,10600,89,Record revenue`;
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='analytics-pro-template.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('↓ Template downloaded — fill it in and re-upload');
+}
+
+/* ---------- THEME TOGGLE ---------- */
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  const light = document.body.classList.contains('light');
+  document.getElementById('theme-btn').textContent = light?'🌙 Dark':'☀ Light';
+  render(currentData);
+  toast(light?'Switched to light mode':'Switched to dark mode');
+}
+
+/* ---------- VIEW SWITCHING ---------- */
+function switchView(view){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.view===view));
+  const anchors={
+    overview:document.getElementById('kpi-grid'),
+    revenue:document.getElementById('section-revenue'),
+    expenses:document.getElementById('section-expenses'),
+    customers:document.getElementById('section-customers'),
+  };
+  const el=anchors[view];
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---------- PDF EXPORT ---------- */
+function exportPDF(){
+  toast('Opening print dialog...');
+  setTimeout(()=>window.print(), 400);
+}
+
+/* ---------- INIT ---------- */
+document.addEventListener('DOMContentLoaded',()=>{
+  render([...FULL_DATA]);
+});
+</script>
+</body>
+</html>
